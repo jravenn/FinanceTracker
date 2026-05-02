@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurelia Finance</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --c: #FAF8F4;
+  --c2: #F3EEE6;
+  --c3: #E8E0D0;
+  --c4: #D9CDB8;
+  --brown: #3D2E1E;
+  --brown2: #6B5240;
+  --brown3: #9A7B62;
+  --gold: #B8945A;
+  --gold2: #D4B07A;
+  --gold3: #EDD9B0;
+  --ok: #4A7C62;
+  --warn: #B06A30;
+  --err: #963D3D;
+  --card: #FDFBF8;
+  --border: rgba(90,65,35,0.12);
+  --border2: rgba(90,65,35,0.22);
+  --sh: 0 1px 3px rgba(61,46,30,0.06), 0 4px 16px rgba(61,46,30,0.07);
+  --sh2: 0 2px 8px rgba(61,46,30,0.08), 0 8px 32px rgba(61,46,30,0.1);
+  --r: 18px; --rs: 12px; --rx: 24px;
+  --sans: 'Inter', system-ui, sans-serif;
+  --serif: 'Playfair Display', Georgia, serif;
+  --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur: 0.28s;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body { font-family: var(--sans); background: var(--c); color: var(--brown); line-height: 1.6; font-size: 14px; }
+
+/* ── LAYOUT ── */
+.shell { display: flex; min-height: 100vh; }
+.side { width: 256px; background: var(--brown); color: var(--c); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; transition: transform var(--dur) var(--ease); }
+.side-head { padding: 32px 28px 28px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.logo { font-family: var(--serif); font-size: 26px; color: var(--gold2); font-weight: 400; letter-spacing: 0.01em; }
+.logo-sub { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; font-weight: 300; }
+.side-nav { flex: 1; padding: 20px 0; overflow-y: auto; }
+.nav-section { font-size: 10px; color: rgba(255,255,255,0.28); letter-spacing: 0.1em; text-transform: uppercase; padding: 16px 28px 8px; font-weight: 500; }
+.nav-item { display: flex; align-items: center; gap: 13px; padding: 11px 28px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13.5px; font-weight: 400; transition: all var(--dur) var(--ease); border-left: 2px solid transparent; }
+.nav-item:hover { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.04); }
+.nav-item.active { color: var(--gold2); border-left-color: var(--gold); background: rgba(184,148,90,0.1); }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.6; flex-shrink: 0; }
+.nav-item.active .nav-dot { opacity: 1; background: var(--gold); }
+.side-foot { padding: 20px 28px 28px; border-top: 1px solid rgba(255,255,255,0.08); }
+.side-foot p { font-size: 11px; color: rgba(255,255,255,0.25); }
+
+.main { margin-left: 256px; flex: 1; padding: 48px 44px 80px; max-width: 1140px; }
+
+/* ── HEADER ── */
+.ph { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; gap: 20px; }
+.ph-left h2 { font-family: var(--serif); font-size: 34px; font-weight: 400; color: var(--brown); line-height: 1.1; }
+.ph-left p { font-size: 13px; color: var(--brown3); margin-top: 5px; font-weight: 300; }
+.ph-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+
+/* ── MONTH TABS ── */
+.month-tabs { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.mtab { background: none; border: 1px solid var(--border); border-radius: 9px; padding: 6px 13px; font-family: var(--sans); font-size: 12px; color: var(--brown3); cursor: pointer; transition: all var(--dur) var(--ease); font-weight: 400; }
+.mtab:hover { border-color: var(--gold3); color: var(--brown2); background: var(--c2); }
+.mtab.active { background: var(--brown); color: var(--gold2); border-color: var(--brown); font-weight: 500; }
+
+/* ── CARDS ── */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 28px; box-shadow: var(--sh); transition: box-shadow var(--dur) var(--ease); }
+.card:hover { box-shadow: var(--sh2); }
+.card-flat { background: var(--c2); border: none; border-radius: var(--r); padding: 24px; }
+.card-sm { padding: 20px 22px; }
+.card-hero { border-left: 3px solid var(--gold); border-radius: 0 var(--r) var(--r) 0; }
+
+/* ── GRIDS ── */
+.g4 { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; }
+.g3 { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.g21 { display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; }
+.g12 { display: grid; grid-template-columns: 1fr 1.7fr; gap: 20px; }
+
+/* ── TYPOGRAPHY ── */
+.eyebrow { font-size: 10px; color: var(--brown3); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; margin-bottom: 6px; display: block; }
+.metric-val { font-family: var(--serif); font-size: 30px; font-weight: 400; color: var(--brown); line-height: 1; }
+.metric-val.lg { font-size: 38px; }
+.metric-val.sm { font-size: 22px; }
+.metric-sub { font-size: 12px; color: var(--brown3); margin-top: 5px; font-weight: 300; }
+.sec-title { font-family: var(--serif); font-size: 19px; font-weight: 400; color: var(--brown); margin-bottom: 18px; display: flex; align-items: center; gap: 14px; }
+.sec-title::after { content:''; flex:1; height:1px; background:var(--c3); }
+
+/* ── TAGS/BADGES ── */
+.tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: 0.01em; }
+.tag-gold { background: var(--gold3); color: var(--warn); }
+.tag-ok { background: #E3F0E8; color: var(--ok); }
+.tag-err { background: #F5E5E5; color: var(--err); }
+.tag-neutral { background: var(--c3); color: var(--brown2); }
+
+/* ── PROGRESS ── */
+.pbar-track { background: var(--c3); border-radius: 999px; height: 5px; overflow: hidden; }
+.pbar-fill { height: 100%; border-radius: 999px; background: var(--gold); transition: width 0.7s var(--ease); }
+.pbar-fill.ok { background: var(--ok); }
+.pbar-fill.err { background: var(--err); }
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 22px; border-radius: var(--rs); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: all var(--dur) var(--ease); border: none; letter-spacing: 0.01em; }
+.btn:active { transform: scale(0.97); }
+.btn-p { background: var(--brown); color: var(--c2); }
+.btn-p:hover { background: var(--brown2); }
+.btn-s { background: var(--c2); color: var(--brown2); border: 1px solid var(--border); }
+.btn-s:hover { background: var(--c3); }
+.btn-ghost { background: transparent; color: var(--brown3); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--gold3); color: var(--brown2); }
+.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 9px; }
+.btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 10px; font-size: 16px; }
+
+/* ── INPUTS ── */
+.inp { background: var(--c); border: 1px solid var(--border); border-radius: var(--rs); padding: 11px 16px; font-family: var(--sans); font-size: 14px; color: var(--brown); width: 100%; outline: none; transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); -webkit-appearance: none; }
+.inp:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,148,90,0.12); }
+.inp::placeholder { color: var(--c4); }
+.inp-group { display: flex; align-items: stretch; background: var(--c); border: 1px solid var(--border); border-radius: var(--rs); overflow: hidden; transition: border-color var(--dur), box-shadow var(--dur); }
+.inp-group:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,148,90,0.12); }
+.inp-pre { padding: 11px 14px; background: var(--c2); color: var(--brown3); border-right: 1px solid var(--border); font-size: 14px; display: flex; align-items: center; flex-shrink: 0; font-weight: 500; }
+.inp-group input { border: none; background: transparent; padding: 11px 14px; font-family: var(--sans); font-size: 14px; color: var(--brown); flex: 1; outline: none; min-width: 0; }
+label.lbl { font-size: 11px; color: var(--brown3); text-transform: uppercase; letter-spacing: 0.07em; display: block; margin-bottom: 7px; font-weight: 500; }
+select.inp { cursor: pointer; }
+
+/* ── ALLOCATION SLIDERS ── */
+.alloc-row { display: flex; align-items: center; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--c3); }
+.alloc-row:last-child { border-bottom: none; }
+.alloc-lbl { width: 82px; font-size: 12px; color: var(--brown2); font-weight: 500; letter-spacing: 0.01em; flex-shrink: 0; }
+.alloc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.alloc-slider { flex: 1; accent-color: var(--gold); cursor: pointer; }
+.alloc-pct { width: 38px; text-align: right; font-size: 13px; color: var(--brown); font-weight: 500; flex-shrink: 0; }
+
+/* ── SCORE RING ── */
+.score-wrap { position: relative; width: 128px; height: 128px; margin: 0 auto 16px; }
+.score-wrap svg { transform: rotate(-90deg); }
+.score-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.score-n { font-family: var(--serif); font-size: 36px; font-weight: 400; color: var(--brown); line-height: 1; }
+.score-lbl { font-size: 10px; color: var(--brown3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+#score-circle { transition: stroke-dashoffset 1s var(--ease), stroke 0.5s ease; }
+
+/* ── INSIGHTS ── */
+.insight { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--c2); animation: fadeUp 0.4s var(--ease) both; }
+.insight:last-child { border-bottom: none; padding-bottom: 0; }
+@keyframes fadeUp { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+.ins-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; font-weight: 600; }
+.ins-icon.ok { background: #E3F0E8; color: var(--ok); }
+.ins-icon.warn { background: #F5EDE3; color: var(--warn); }
+.ins-icon.info { background: var(--gold3); color: var(--warn); }
+.ins-txt { font-size: 13px; color: var(--brown2); line-height: 1.55; }
+.ins-txt strong { color: var(--brown); font-weight: 500; }
+
+/* ── EXPENSES ── */
+.exp-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--c2); animation: fadeUp 0.3s var(--ease) both; }
+.exp-row:last-child { border-bottom: none; }
+.exp-dot { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.exp-info { flex: 1; min-width: 0; }
+.exp-name { font-size: 13px; color: var(--brown); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exp-cat { font-size: 11px; color: var(--brown3); margin-top: 1px; }
+.exp-amt { font-family: var(--serif); font-size: 17px; color: var(--brown); white-space: nowrap; }
+.exp-del { background: none; border: none; color: var(--c4); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 5px; border-radius: 5px; transition: all 0.2s; }
+.exp-del:hover { background: #F5E5E5; color: var(--err); }
+
+/* ── GOAL CARD ── */
+.goal-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--rs); padding: 20px; transition: box-shadow var(--dur) var(--ease); animation: fadeUp 0.4s var(--ease) both; }
+.goal-card:hover { box-shadow: var(--sh2); }
+.goal-name { font-size: 14px; font-weight: 500; color: var(--brown); margin-bottom: 3px; }
+.goal-meta { font-size: 12px; color: var(--brown3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+/* ── TOAST ── */
+.toast-stack { position: fixed; bottom: 28px; right: 28px; z-index: 999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--brown); color: var(--c2); padding: 13px 20px; border-radius: var(--rs); font-size: 13px; box-shadow: var(--sh2); pointer-events: auto; max-width: 300px; display: flex; align-items: center; gap: 10px; font-weight: 400; animation: toastSlide 0.32s var(--ease); }
+.toast.ok { background: var(--ok); }
+.toast.warn { background: var(--warn); }
+@keyframes toastSlide { from { opacity:0; transform: translateX(16px); } to { opacity:1; transform: translateX(0); } }
+
+/* ── MODAL ── */
+.overlay { position: fixed; inset: 0; background: rgba(40,28,18,0.45); z-index: 200; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); animation: fadein 0.2s ease; }
+@keyframes fadein { from { opacity:0; } to { opacity:1; } }
+.modal { background: var(--card); border-radius: var(--rx); padding: 36px; width: 440px; max-width: calc(100vw - 32px); box-shadow: 0 24px 64px rgba(40,28,18,0.2); animation: modalUp 0.3s var(--ease); }
+@keyframes modalUp { from { opacity:0; transform: translateY(12px) scale(0.98); } to { opacity:1; transform: translateY(0) scale(1); } }
+.modal-h { font-family: var(--serif); font-size: 24px; font-weight: 400; color: var(--brown); margin-bottom: 24px; }
+.modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 28px; }
+.fg { margin-bottom: 18px; }
+
+/* ── VIEWS ── */
+.view { display: none; animation: fadeUp 0.35s var(--ease); }
+.view.active { display: block; }
+
+/* ── CHART WRAP ── */
+.chart-box { position: relative; width: 100%; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 52px 24px; color: var(--brown3); }
+.empty-ico { font-size: 36px; margin-bottom: 14px; opacity: 0.5; }
+.empty h3 { font-family: var(--serif); font-size: 20px; color: var(--brown2); margin-bottom: 8px; font-weight: 400; }
+.empty p { font-size: 13px; line-height: 1.6; color: var(--brown3); font-weight: 300; }
+
+/* ── SALARY INPUT HERO ── */
+.salary-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.salary-hero-left { flex: 1; min-width: 200px; }
+.salary-hero-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* ── MOBILE HAMBURGER ── */
+.ham { display: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--rs); width: 40px; height: 40px; cursor: pointer; flex-direction: column; align-items: center; justify-content: center; gap: 5px; box-shadow: var(--sh); }
+.ham span { display: block; width: 16px; height: 1.5px; background: var(--brown); border-radius: 2px; transition: all var(--dur) var(--ease); }
+.side-backdrop { display: none; position: fixed; inset: 0; background: rgba(40,28,18,0.4); z-index: 49; }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--c3); margin: 24px 0; }
+
+/* ── YEAR STRIP ── */
+.year-strip { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 0; }
+.year-item { padding: 20px 16px; border-right: 1px solid var(--c3); }
+.year-item:last-child { border-right: none; }
+
+/* ── CUSTOM RANGE ── */
+input[type=range] { -webkit-appearance: none; height: 4px; background: var(--c3); border-radius: 2px; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.15); transition: transform 0.2s; }
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid white; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 980px) {
+  .side { transform: translateX(-100%); }
+  .side.open { transform: translateX(0); box-shadow: 4px 0 32px rgba(40,28,18,0.2); }
+  .side-backdrop.open { display: block; }
+  .main { margin-left: 0; padding: 24px 20px 80px; }
+  .ham { display: flex; }
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .g21, .g12, .g2 { grid-template-columns: 1fr; }
+  .year-strip { grid-template-columns: repeat(3,1fr); }
+  .year-item:nth-child(3) { border-right: none; }
+  .year-item:nth-child(4), .year-item:nth-child(5) { border-top: 1px solid var(--c3); }
+  .ph { flex-direction: column; gap: 16px; }
+  .ph-right { align-items: flex-start; width: 100%; }
+  .month-tabs { justify-content: flex-start; }
+}
+@media (max-width: 600px) {
+  .g4 { grid-template-columns: 1fr; }
+  .g3 { grid-template-columns: 1fr; }
+  .salary-hero { flex-direction: column; align-items: flex-start; }
+  .card { padding: 20px; }
+  .year-strip { grid-template-columns: 1fr 1fr; }
+  .year-item:nth-child(2) { border-right: none; }
+  .year-item:nth-child(3),  .year-item:nth-child(4), .year-item:nth-child(5) { border-top: 1px solid var(--c3); }
+}
+
+/* ── UTILS ── */
+.mb8 { margin-bottom: 8px; }
+.mb12 { margin-bottom: 12px; }
+.mb16 { margin-bottom: 16px; }
+.mb20 { margin-bottom: 20px; }
+.mb24 { margin-bottom: 24px; }
+.mb32 { margin-bottom: 32px; }
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.mt16 { margin-top: 16px; }
+.row { display: flex; align-items: center; }
+.row-between { display: flex; align-items: center; justify-content: space-between; }
+.gap6 { gap: 6px; }
+.gap8 { gap: 8px; }
+.gap10 { gap: 10px; }
+.gap12 { gap: 12px; }
+.hidden { display: none; }
+.w100 { width: 100%; }
+.serif { font-family: var(--serif); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="side" id="sidebar">
+  <div class="side-head">
+    <div class="logo">Aurelia</div>
+    <div class="logo-sub">Personal Finance</div>
+  </div>
+  <div class="side-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="gotoView('dashboard',this)"><span class="nav-dot"></span><span>Dashboard</span></div>
+    <div class="nav-item" onclick="gotoView('trends',this)"><span class="nav-dot"></span><span>Trends</span></div>
+    <div class="nav-section">Money</div>
+    <div class="nav-item" onclick="gotoView('expenses',this)"><span class="nav-dot"></span><span>Expenses</span></div>
+    <div class="nav-item" onclick="gotoView('goals',this)"><span class="nav-dot"></span><span>Goals</span></div>
+    <div class="nav-section">Account</div>
+    <div class="nav-item" onclick="gotoView('settings',this)"><span class="nav-dot"></span><span>Settings</span></div>
+  </div>
+  <div class="side-foot"><p>Aurelia v2 · All data local</p></div>
+</nav>
+<div class="side-backdrop" id="backdrop" onclick="closeSidebar()"></div>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div id="view-dashboard" class="view active">
+  <div class="ph">
+    <div class="ph-left">
+      <div class="row gap12 mb8"><button class="ham" id="ham-btn" onclick="toggleSidebar()"><span></span><span></span><span></span></button></div>
+      <h2 id="greeting">Good morning</h2>
+      <p id="dash-subtitle">Loading your overview…</p>
+    </div>
+    <div class="ph-right">
+      <div class="month-tabs" id="mtabs"></div>
+    </div>
+  </div>
+
+  <!-- Salary hero card -->
+  <div class="card card-hero mb20">
+    <div class="salary-hero">
+      <div class="salary-hero-left">
+        <span class="eyebrow">Net salary</span>
+        <p id="salary-month-lbl" style="font-size:13px;color:var(--brown3);margin-top:2px;font-weight:300;">Enter your income for this month</p>
+      </div>
+      <div class="salary-hero-right">
+        <div class="inp-group" style="width:200px;">
+          <span class="inp-pre">€</span>
+          <input type="number" id="sal-inp" placeholder="0.00" oninput="livePreview()" style="font-family:var(--serif);font-size:22px;padding:9px 14px;" />
+        </div>
+        <button class="btn btn-p" onclick="saveSalary()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Allocation sliders -->
+  <div class="card mb20">
+    <div class="row-between mb16">
+      <h3 class="serif" style="font-size:15px;font-weight:400;color:var(--brown);">Allocation</h3>
+      <span class="tag" id="alloc-tag">100%</span>
+    </div>
+    <div id="alloc-sliders"></div>
+  </div>
+
+  <!-- Breakdown metrics -->
+  <div class="g4 mb20" id="breakdown"></div>
+
+  <!-- Middle row: Insights + Score -->
+  <div class="g21 mb20">
+    <div class="card">
+      <div class="sec-title">Insights</div>
+      <div id="insights"></div>
+    </div>
+    <div class="card" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <span class="eyebrow" style="display:block;margin-bottom:18px;">Monthly score</span>
+      <div class="score-wrap">
+        <svg viewBox="0 0 128 128" width="128" height="128">
+          <circle cx="64" cy="64" r="54" fill="none" stroke="#E8E0D0" stroke-width="9"/>
+          <circle cx="64" cy="64" r="54" fill="none" stroke="#B8945A" stroke-width="9" stroke-linecap="round" stroke-dasharray="339" id="score-circle" stroke-dashoffset="339"/>
+        </svg>
+        <div class="score-center">
+          <div class="score-n" id="score-n">—</div>
+          <div class="score-lbl">/100</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--brown2);line-height:1.5;" id="score-fb">Enter salary to calculate</p>
+      <div class="mt12" id="score-badge"></div>
+    </div>
+  </div>
+
+  <!-- Quick add expense -->
+  <div class="card mb20">
+    <div class="sec-title">Add expense</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:0 0 130px;">
+        <label class="lbl">Amount</label>
+        <div class="inp-group">
+          <span class="inp-pre">€</span>
+          <input type="number" id="ea" placeholder="0.00" style="min-width:0;" />
+        </div>
+      </div>
+      <div style="flex:1;min-width:130px;">
+        <label class="lbl">Category</label>
+        <select id="ecat" class="inp" onchange="toggleCustomCat()">
+          <option value="Food">Food</option>
+          <option value="Transport">Transport</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Bills">Bills</option>
+          <option value="Other">Other</option>
+          <option value="custom">+ Custom</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:120px;" id="custom-wrap" class="hidden">
+        <label class="lbl">Custom name</label>
+        <input type="text" id="ecustom" class="inp" placeholder="e.g. Gym" />
+      </div>
+      <div style="flex:2;min-width:150px;">
+        <label class="lbl">Description</label>
+        <input type="text" id="edesc" class="inp" placeholder="What was it?" />
+      </div>
+      <button class="btn btn-p" onclick="addExpense()" style="height:42px;">Add</button>
+    </div>
+  </div>
+
+  <!-- Expense chart + list -->
+  <div class="g2 mb20">
+    <div class="card">
+      <div class="sec-title">Breakdown</div>
+      <div class="chart-box" style="height:200px;"><canvas id="donut-chart" role="img" aria-label="Expense breakdown by category">No expenses yet.</canvas></div>
+      <div id="donut-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;"></div>
+    </div>
+    <div class="card">
+      <div class="row-between mb16">
+        <div class="sec-title" style="margin-bottom:0;">Recent</div>
+        <span id="exp-total" style="font-family:var(--serif);font-size:18px;color:var(--brown);">€0</span>
+      </div>
+      <div id="exp-list"></div>
+    </div>
+  </div>
+
+  <!-- Year overview -->
+  <div class="card">
+    <div class="sec-title">Year overview</div>
+    <div class="year-strip" id="year-strip"></div>
+  </div>
+</div>
+
+<!-- ══════════ TRENDS ══════════ -->
+<div id="view-trends" class="view">
+  <div class="ph"><div class="ph-left"><h2>Trends</h2><p>Income and performance over time</p></div></div>
+  <div class="g3 mb20" id="trend-metrics"></div>
+  <div class="card mb20">
+    <div class="sec-title">Monthly income</div>
+    <div class="row gap12 mb16" id="sal-chart-legend"></div>
+    <div class="chart-box" style="height:260px;"><canvas id="sal-chart" role="img" aria-label="Monthly salary bar chart">No salary data.</canvas></div>
+  </div>
+  <div class="card">
+    <div class="sec-title">Savings vs expenses</div>
+    <div class="row gap16 mb16" id="savexp-legend"></div>
+    <div class="chart-box" style="height:220px;"><canvas id="savexp-chart" role="img" aria-label="Savings vs expenses line chart">No data.</canvas></div>
+  </div>
+</div>
+
+<!-- ══════════ EXPENSES ══════════ -->
+<div id="view-expenses" class="view">
+  <div class="ph"><div class="ph-left"><h2>Expenses</h2><p>All tracked spending</p></div></div>
+  <div class="card"><div id="all-exp"></div></div>
+</div>
+
+<!-- ══════════ GOALS ══════════ -->
+<div id="view-goals" class="view">
+  <div class="ph">
+    <div class="ph-left"><h2>Goals</h2><p>Savings targets and progress</p></div>
+    <div class="ph-right"><button class="btn btn-p" onclick="openGoalModal()">+ New goal</button></div>
+  </div>
+  <div class="g3" id="goals-grid"></div>
+</div>
+
+<!-- ══════════ SETTINGS ══════════ -->
+<div id="view-settings" class="view">
+  <div class="ph"><div class="ph-left"><h2>Settings</h2><p>Preferences and data</p></div></div>
+  <div class="card mb20">
+    <div class="sec-title">Default allocations</div>
+    <p style="font-size:13px;color:var(--brown3);margin-bottom:20px;font-weight:300;">Applied when creating a new month.</p>
+    <div id="def-sliders"></div>
+    <div class="mt16"><button class="btn btn-p" onclick="saveDefaults()">Save defaults</button></div>
+  </div>
+  <div class="card">
+    <div class="sec-title">Data</div>
+    <div class="row gap10">
+      <button class="btn btn-s" onclick="exportData()">Export JSON</button>
+      <button class="btn btn-ghost" onclick="if(confirm('Reset everything?'))resetData();" style="color:var(--err);border-color:rgba(150,61,61,0.3);">Reset all data</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- GOAL MODAL -->
+<div id="goal-modal" style="display:none;" onclick="if(event.target===this)closeGoalModal()">
+  <div style="min-height:100vh;background:rgba(40,28,18,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
+    <div class="modal">
+      <div class="modal-h">New savings goal</div>
+      <div class="fg"><label class="lbl">Goal name</label><input type="text" id="g-name" class="inp" placeholder="e.g. Emergency fund" /></div>
+      <div class="fg"><label class="lbl">Target amount (€)</label><div class="inp-group"><span class="inp-pre">€</span><input type="number" id="g-target" placeholder="5 000" /></div></div>
+      <div class="fg">
+        <label class="lbl">% of monthly savings allocated</label>
+        <input type="range" min="5" max="100" step="5" value="30" id="g-pct" class="w100" oninput="document.getElementById('g-pct-val').textContent=this.value+'%'" />
+        <div style="text-align:right;font-size:13px;font-weight:500;color:var(--brown);margin-top:4px;" id="g-pct-val">30%</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-s" onclick="closeGoalModal()">Cancel</button>
+        <button class="btn btn-p" onclick="saveGoal()">Create goal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WARN MODAL -->
+<div id="warn-modal" style="display:none;">
+  <div style="min-height:100vh;background:rgba(40,28,18,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
+    <div class="modal">
+      <div class="modal-h" style="color:var(--warn);">Budget warning</div>
+      <p style="font-size:14px;color:var(--brown2);line-height:1.6;" id="warn-msg">This will push you over budget.</p>
+      <div class="modal-foot">
+        <button class="btn btn-s" onclick="cancelWarn()">Cancel</button>
+        <button class="btn btn-p" onclick="confirmWarn()">Continue anyway</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-stack" id="toasts"></div>
+
+<script>
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CAT_COLORS = { Food:'#B8945A', Transport:'#6B5240', Shopping:'#9A7B62', Bills:'#4A7C62', Other:'#888070', default:'#B06A30' };
+const CAT_EMOJI = { Food:'🍽', Transport:'🚌', Shopping:'🛍', Bills:'🧾', Other:'📦', default:'📌' };
+const ALLOC_DOTS = ['#B8945A','#4A7C62','#6B5240','#9A7B62'];
+const ALLOC_KEYS = ['savings_pct','invest_pct','expense_pct','lifestyle_pct'];
+const ALLOC_NAMES = ['Savings','Invest','Expenses','Lifestyle'];
+
+let S = { cur: new Date().getMonth(), months:{}, goals:[], defs:{savings_pct:35,invest_pct:10,expense_pct:43,lifestyle_pct:12} };
+let pending = null;
+let chartDonut = null, chartSal = null, chartSavExp = null;
+
+function load() { try { const d = localStorage.getItem('aurelia3'); if(d) S = {...S,...JSON.parse(d)}; } catch(e){} }
+function save() { localStorage.setItem('aurelia3', JSON.stringify(S)); }
+
+function mkey(m) { return `m${m}`; }
+function md(m) {
+  const k = mkey(m);
+  if (!S.months[k]) S.months[k] = { salary:0, savings_pct:S.defs.savings_pct, invest_pct:S.defs.invest_pct, expense_pct:S.defs.expense_pct, lifestyle_pct:S.defs.lifestyle_pct, expenses:[], score:null };
+  return S.months[k];
+}
+function cur() { return md(S.cur); }
+
+function calc(d) {
+  const s = d.salary||0;
+  return { savings: s*d.savings_pct/100, invest: s*d.invest_pct/100, exp_bud: s*d.expense_pct/100, life_bud: s*d.lifestyle_pct/100, exp_act: (d.expenses||[]).reduce((a,e)=>a+e.amount,0) };
+}
+
+function score(d) {
+  if (!d.salary) return null;
+  const b = calc(d); let sc = 100;
+  const over = b.exp_act - (b.exp_bud + b.life_bud);
+  if (over > 0) sc -= Math.min(35, Math.round(over/d.salary*180));
+  if (d.savings_pct < 20) sc -= 20;
+  if (d.invest_pct < 5) sc -= 15;
+  return Math.max(0, Math.min(100, Math.round(sc)));
+}
+
+function fmt(v, dec=0) { return '€' + v.toLocaleString('en-IE',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function fmtN(v) { return v.toLocaleString('en-IE',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+
+// ──── RENDER ────
+function render() {
+  renderHeader(); renderMtabs(); renderSliders(); renderBreakdown();
+  renderInsights(); renderScore(); renderExpenses(); renderDonut();
+  renderYearStrip(); renderGoals(); renderAllExp();
+}
+
+function renderHeader() {
+  const h = new Date().getHours();
+  const gr = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = gr;
+  const d = cur();
+  const sub = d.salary ? `${MONTHS[S.cur]} · ${fmt(d.salary,2)} net salary` : `${MONTHS[S.cur]} · No salary entered`;
+  document.getElementById('dash-subtitle').textContent = sub;
+  document.getElementById('salary-month-lbl').textContent = `${MONTHS[S.cur]} net income`;
+  document.getElementById('sal-inp').value = d.salary || '';
+}
+
+function renderMtabs() {
+  document.getElementById('mtabs').innerHTML = ABBR.map((a,i) =>
+    `<button class="mtab${i===S.cur?' active':''}" onclick="switchMonth(${i})">${a}</button>`
+  ).join('');
+}
+
+function renderSliders() {
+  const d = cur();
+  document.getElementById('alloc-sliders').innerHTML = ALLOC_KEYS.map((k,i) => `
+    <div class="alloc-row">
+      <span class="alloc-dot" style="background:${ALLOC_DOTS[i]};"></span>
+      <span class="alloc-lbl">${ALLOC_NAMES[i]}</span>
+      <input type="range" min="0" max="80" step="1" value="${d[k]}" class="alloc-slider w100"
+        id="sl-${k}" oninput="onAlloc('${k}',+this.value)" />
+      <span class="alloc-pct" id="slv-${k}">${d[k]}%</span>
+    </div>
+  `).join('');
+  updateAllocTag();
+  renderDefSliders();
+}
+
+function renderDefSliders() {
+  const el = document.getElementById('def-sliders');
+  if (!el) return;
+  el.innerHTML = ALLOC_KEYS.map((k,i) => `
+    <div class="alloc-row">
+      <span class="alloc-dot" style="background:${ALLOC_DOTS[i]};"></span>
+      <span class="alloc-lbl">${ALLOC_NAMES[i]}</span>
+      <input type="range" min="0" max="80" step="1" value="${S.defs[k]}" class="alloc-slider w100"
+        id="def-sl-${k}" oninput="onDefAlloc('${k}',+this.value)" />
+      <span class="alloc-pct" id="def-slv-${k}">${S.defs[k]}%</span>
+    </div>
+  `).join('');
+}
+
+function onAlloc(k, v) {
+  cur()[k] = v;
+  document.getElementById('slv-'+k).textContent = v+'%';
+  updateAllocTag(); renderBreakdown(); renderInsights(); renderScore(); save();
+}
+
+function onDefAlloc(k, v) {
+  S.defs[k] = v;
+  document.getElementById('def-slv-'+k).textContent = v+'%';
+}
+
+function updateAllocTag() {
+  const d = cur();
+  const total = ALLOC_KEYS.reduce((a,k)=>a+d[k],0);
+  const tag = document.getElementById('alloc-tag');
+  tag.textContent = total + '%';
+  tag.className = 'tag ' + (total === 100 ? 'tag-ok' : 'tag-err');
+}
+
+function renderBreakdown() {
+  const d = cur(); const b = calc(d);
+  const items = [
+    {lbl:'Savings', val:b.savings, pct:d.savings_pct, col:ALLOC_DOTS[0]},
+    {lbl:'Investments', val:b.invest, pct:d.invest_pct, col:ALLOC_DOTS[1]},
+    {lbl:'Expenses', val:b.exp_bud, pct:d.expense_pct, col:ALLOC_DOTS[2]},
+    {lbl:'Lifestyle', val:b.life_bud, pct:d.lifestyle_pct, col:ALLOC_DOTS[3]},
+  ];
+  document.getElementById('breakdown').innerHTML = items.map(it => `
+    <div class="card card-sm">
+      <span class="eyebrow">${it.lbl}</span>
+      <div class="metric-val sm" style="color:${it.col};">${d.salary ? fmt(it.val) : '—'}</div>
+      <div class="metric-sub">${it.pct}% of salary</div>
+      <div class="pbar-track mt8"><div class="pbar-fill" style="width:${it.pct}%;background:${it.col};"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderInsights() {
+  const d = cur(); const b = calc(d); const ins = [];
+  if (d.salary) {
+    const over = b.exp_act - (b.exp_bud + b.life_bud);
+    if (over > 0) ins.push({t:'warn',i:'!',txt:`Overspent by <strong>${fmt(Math.round(over))}</strong> this month. Review your spending.`});
+    else if (d.expenses && d.expenses.length) ins.push({t:'ok',i:'✓',txt:`Within budget — <strong>${fmt(Math.round(Math.abs(over)))}</strong> remaining.`});
+    if (d.savings_pct >= 30) ins.push({t:'ok',i:'★',txt:`Excellent savings rate of <strong>${d.savings_pct}%</strong>.`});
+    else if (d.savings_pct < 15) ins.push({t:'warn',i:'↑',txt:`Savings rate is only <strong>${d.savings_pct}%</strong>. Aim for at least 20%.`});
+  }
+  const pi = S.cur > 0 ? S.months[mkey(S.cur-1)] : null;
+  if (pi && pi.salary && d.salary) {
+    const diff = d.salary - pi.salary;
+    if (diff !== 0) ins.push({t: diff>0?'ok':'warn', i: diff>0?'↑':'↓', txt:`Salary ${diff>0?'up':'down'} <strong>${fmt(Math.abs(Math.round(diff)))}</strong> vs last month.`});
+    const sav = d.savings_pct - pi.savings_pct;
+    if (Math.abs(sav)>=5) ins.push({t:sav>0?'ok':'warn',i:sav>0?'▲':'▼',txt:`Savings rate ${sav>0?'increased':'decreased'} by <strong>${Math.abs(sav)}%</strong>.`});
+  }
+  let streak = 0;
+  for (let i=S.cur;i>=0;i--) { const x=S.months[mkey(i)]; if(x&&x.salary&&x.savings_pct>=20) streak++; else break; }
+  if (streak>=2) ins.push({t:'info',i:'🏅',txt:`<strong>${streak} months</strong> of consistent saving. Keep it up!`});
+  if (!d.salary) ins.push({t:'info',i:'i',txt:'Enter your salary to unlock personalised insights.'});
+  document.getElementById('insights').innerHTML = ins.length
+    ? ins.map((x,n) => `<div class="insight" style="animation-delay:${n*0.07}s;"><div class="ins-icon ${x.t}">${x.i}</div><div class="ins-txt">${x.txt}</div></div>`).join('')
+    : '<div class="empty" style="padding:24px;"><p>Add salary and expenses to see analysis.</p></div>';
+}
+
+function renderScore() {
+  const d = cur(); const sc = score(d);
+  d.score = sc;
+  const n = document.getElementById('score-n');
+  const c = document.getElementById('score-circle');
+  const fb = document.getElementById('score-fb');
+  const badge = document.getElementById('score-badge');
+  if (sc === null) { n.textContent='—'; c.style.strokeDashoffset='339'; fb.textContent='Enter salary to calculate'; badge.innerHTML=''; return; }
+  n.textContent = sc;
+  c.style.strokeDashoffset = (339 - 339*sc/100).toFixed(1);
+  c.style.stroke = sc>=80?'#4A7C62':sc>=60?'#B8945A':'#963D3D';
+  fb.textContent = sc>=90?'Exceptional month 🎉':sc>=75?'Strong month, well managed':sc>=60?'Good — slight overspending':sc>=40?'Room for improvement':'Challenging month';
+  badge.innerHTML = sc>=80?'<span class="tag tag-ok">On track</span>':sc<50?'<span class="tag tag-err">Needs attention</span>':'<span class="tag tag-gold">Making progress</span>';
+}
+
+function renderExpenses() {
+  const d = cur(); const exps = d.expenses||[];
+  const total = exps.reduce((a,e)=>a+e.amount,0);
+  document.getElementById('exp-total').textContent = fmt(total,2);
+  const list = document.getElementById('exp-list');
+  if (!exps.length) { list.innerHTML = '<div class="empty" style="padding:28px;"><p>No expenses yet.</p></div>'; return; }
+  list.innerHTML = [...exps].reverse().slice(0,10).map((e,i)=>{
+    const ri = exps.length-1-i;
+    const ico = CAT_EMOJI[e.category]||CAT_EMOJI.default;
+    const col = CAT_COLORS[e.category]||CAT_COLORS.default;
+    return `<div class="exp-row" style="animation-delay:${i*0.04}s;">
+      <div class="exp-dot" style="background:${col}18;">${ico}</div>
+      <div class="exp-info"><div class="exp-name">${e.desc||e.category}</div><div class="exp-cat">${e.category}</div></div>
+      <div class="exp-amt">${fmt(e.amount,2)}</div>
+      <button class="exp-del" onclick="delExp(${ri})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function renderDonut() {
+  const d = cur(); const exps = d.expenses||[];
+  const byCat = {};
+  exps.forEach(e => byCat[e.category]=(byCat[e.category]||0)+e.amount);
+  const labs = Object.keys(byCat), data = labs.map(l=>byCat[l]);
+  const cols = labs.map(l=>CAT_COLORS[l]||CAT_COLORS.default);
+  if (chartDonut) { chartDonut.destroy(); chartDonut=null; }
+  if (!labs.length) { document.getElementById('donut-legend').innerHTML=''; return; }
+  chartDonut = new Chart(document.getElementById('donut-chart'), {
+    type:'doughnut',
+    data:{ labels:labs, datasets:[{data, backgroundColor:cols, borderWidth:0, hoverOffset:6}] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.parsed,2)}`}}} }
+  });
+  const tot = data.reduce((a,b)=>a+b,0);
+  document.getElementById('donut-legend').innerHTML = labs.map((l,i)=>
+    `<span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--brown3);">
+      <span style="width:9px;height:9px;border-radius:2px;background:${cols[i]};display:inline-block;"></span>
+      ${l} ${tot?Math.round(data[i]/tot*100):0}%
+    </span>`
+  ).join('');
+}
+
+function renderYearStrip() {
+  let tot=0,tsav=0,tinv=0,texp=0,tlife=0, cnt=0;
+  for(let m=0;m<12;m++){const d=S.months[mkey(m)];if(!d||!d.salary)continue;const b=calc(d);tot+=d.salary;tsav+=b.savings;tinv+=b.invest;texp+=b.exp_act;cnt++;}
+  const items=[{l:'Total income',v:tot},{l:'Total savings',v:tsav},{l:'Investments',v:tinv},{l:'Spending',v:texp},{l:'Months tracked',v:cnt}];
+  document.getElementById('year-strip').innerHTML = items.map(it=>`
+    <div class="year-item">
+      <span class="eyebrow">${it.l}</span>
+      <div class="metric-val sm">${tot&&it.l!=='Months tracked'?fmt(it.v):it.l==='Months tracked'?it.v:'—'}</div>
+    </div>
+  `).join('');
+}
+
+function renderGoals() {
+  const grid = document.getElementById('goals-grid');
+  if (!S.goals.length) { grid.innerHTML=`<div class="empty" style="grid-column:1/-1;"><div class="empty-ico">◎</div><h3>No goals yet</h3><p>Create your first savings goal to track progress.</p></div>`; return; }
+  const d = cur(); const b = calc(d);
+  grid.innerHTML = S.goals.map((g,i)=>{
+    const monthly = b.savings * g.pct/100;
+    let total = 0;
+    for(let m=0;m<12;m++){const md2=S.months[mkey(m)];if(!md2||!md2.salary)continue;total+=calc(md2).savings*g.pct/100;}
+    const pct = g.target ? Math.min(100,Math.round(total/g.target*100)) : 0;
+    const done = pct>=100;
+    return `<div class="goal-card" style="animation-delay:${i*0.08}s;">
+      <div class="row-between mb8">
+        <div class="goal-name">${g.name}</div>
+        <button class="btn btn-sm btn-ghost" onclick="delGoal(${i})">×</button>
+      </div>
+      <div class="goal-meta">
+        <span>${fmt(Math.round(total))} / ${fmt(g.target)}</span>
+        <span class="tag ${done?'tag-ok':'tag-neutral'}">${done?'Complete':''+pct+'%'}</span>
+      </div>
+      <div class="pbar-track"><div class="pbar-fill ${done?'ok':''}" style="width:${pct}%;"></div></div>
+      <p style="font-size:12px;color:var(--brown3);margin-top:10px;font-weight:300;">${g.pct}% of savings · ${fmt(monthly,2)}/mo</p>
+    </div>`;
+  }).join('');
+}
+
+function renderAllExp() {
+  const all=[];
+  for(let m=0;m<12;m++){const d=S.months[mkey(m)];if(!d||!d.expenses)continue;d.expenses.forEach(e=>all.push({...e,month:MONTHS[m]}));}
+  const el=document.getElementById('all-exp');
+  if(!all.length){el.innerHTML='<div class="empty"><div class="empty-ico">◉</div><h3>No expenses</h3><p>Add expenses from the dashboard.</p></div>';return;}
+  el.innerHTML=[...all].reverse().map(e=>{
+    const ico=CAT_EMOJI[e.category]||CAT_EMOJI.default;
+    const col=CAT_COLORS[e.category]||CAT_COLORS.default;
+    return `<div class="exp-row"><div class="exp-dot" style="background:${col}18;">${ico}</div><div class="exp-info"><div class="exp-name">${e.desc||e.category}</div><div class="exp-cat">${e.category} · ${e.month}</div></div><div class="exp-amt">${fmt(e.amount,2)}</div></div>`;
+  }).join('');
+}
+
+function renderTrends() {
+  const sals=[],months2=[];let hi=null,lo=null,hiI=-1,loI=-1;
+  for(let m=0;m<12;m++){const d=S.months[mkey(m)];const s=d&&d.salary?d.salary:0;sals.push(s);months2.push(ABBR[m]);if(s>0){if(hi===null||s>hi){hi=s;hiI=m;}if(lo===null||s<lo){lo=s;loI=m;}}}
+  const nz=sals.filter(s=>s>0);const avg=nz.length?nz.reduce((a,b)=>a+b,0)/nz.length:0;
+  document.getElementById('trend-metrics').innerHTML=[
+    {l:'Average income',v:avg?fmt(Math.round(avg)):'—',s:nz.length+' months tracked'},
+    {l:'Highest month',v:hi?fmt(Math.round(hi)):'—',s:hiI>=0?MONTHS[hiI]:'—'},
+    {l:'Lowest month',v:lo?fmt(Math.round(lo)):'—',s:loI>=0?MONTHS[loI]:'—'},
+  ].map(it=>`<div class="card card-sm"><span class="eyebrow">${it.l}</span><div class="metric-val sm">${it.v}</div><div class="metric-sub">${it.s}</div></div>`).join('');
+
+  if(chartSal){chartSal.destroy();chartSal=null;}
+  const bcols=sals.map((_,i)=>i===hiI?'#4A7C62':i===loI?'#963D3D':'#B8945A');
+  chartSal=new Chart(document.getElementById('sal-chart'),{
+    type:'bar',
+    data:{labels:months2,datasets:[{data:sals,backgroundColor:bcols,borderRadius:7,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#9A7B62',font:{size:11,family:'Inter'}}},y:{grid:{color:'#E8E0D0'},ticks:{color:'#9A7B62',callback:v=>'€'+fmtN(v),font:{size:11,family:'Inter'}}}}}
+  });
+  document.getElementById('sal-chart-legend').innerHTML=`
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--brown3);"><span style="width:9px;height:9px;border-radius:2px;background:#4A7C62;display:inline-block;"></span>Highest</span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--brown3);"><span style="width:9px;height:9px;border-radius:2px;background:#963D3D;display:inline-block;"></span>Lowest</span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--brown3);"><span style="width:9px;height:9px;border-radius:2px;background:#B8945A;display:inline-block;"></span>Normal</span>`;
+
+  if(chartSavExp){chartSavExp.destroy();chartSavExp=null;}
+  const sd=[],ed=[];
+  for(let m=0;m<12;m++){const d=S.months[mkey(m)];const b=d?calc(d):{savings:0,exp_act:0};sd.push(b.savings);ed.push(b.exp_act);}
+  chartSavExp=new Chart(document.getElementById('savexp-chart'),{
+    type:'line',
+    data:{labels:months2,datasets:[
+      {label:'Savings',data:sd,borderColor:'#B8945A',backgroundColor:'rgba(184,148,90,0.08)',tension:0.45,fill:true,borderWidth:2.5,pointBackgroundColor:'#B8945A',pointRadius:4,pointHoverRadius:6},
+      {label:'Expenses',data:ed,borderColor:'#963D3D',backgroundColor:'rgba(150,61,61,0.04)',tension:0.45,fill:true,borderWidth:2,pointBackgroundColor:'#963D3D',pointRadius:4,pointHoverRadius:6,borderDash:[6,4]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#9A7B62',font:{size:11,family:'Inter'}}},y:{grid:{color:'#E8E0D0'},ticks:{color:'#9A7B62',callback:v=>'€'+fmtN(v),font:{size:11,family:'Inter'}}}}}
+  });
+  document.getElementById('savexp-legend').innerHTML=`
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--brown3);"><span style="width:9px;height:2px;background:#B8945A;display:inline-block;"></span>Savings</span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--brown3);"><span style="width:9px;height:2px;background:#963D3D;display:inline-block;border-top:2px dashed #963D3D;height:0;"></span>Expenses</span>`;
+}
+
+// ── ACTIONS ──
+function switchMonth(m) { S.cur=m; save(); render(); }
+function livePreview() { /* live UI update on type */ }
+function saveSalary() {
+  const v = parseFloat(document.getElementById('sal-inp').value)||0;
+  cur().salary=v; save(); toast(v?`Salary saved: ${fmt(v,2)}`:'Salary cleared'); render();
+}
+
+function toggleCustomCat() {
+  document.getElementById('custom-wrap').classList.toggle('hidden', document.getElementById('ecat').value!=='custom');
+}
+
+function addExpense() {
+  const amt=parseFloat(document.getElementById('ea').value);
+  if(!amt||amt<=0){toast('Enter a valid amount','warn');return;}
+  let cat=document.getElementById('ecat').value;
+  if(cat==='custom'){cat=document.getElementById('ecustom').value.trim();if(!cat){toast('Enter a category name','warn');return;}}
+  const desc=document.getElementById('edesc').value.trim();
+  const d=cur();const b=calc(d);const budget=b.exp_bud+b.life_bud;
+  if(d.salary && b.exp_act+amt>budget){
+    pending={amount:amt,category:cat,desc};
+    document.getElementById('warn-msg').textContent=`Adding ${fmt(amt,2)} will bring total spending to ${fmt(b.exp_act+amt,2)}, exceeding your budget of ${fmt(budget,2)}.`;
+    document.getElementById('warn-modal').style.display='block';
+    return;
+  }
+  doAddExp({amount:amt,category:cat,desc});
+}
+
+function doAddExp(exp) {
+  const d=cur();if(!d.expenses)d.expenses=[];
+  d.expenses.push({...exp,date:Date.now()});
+  save();
+  document.getElementById('ea').value='';
+  document.getElementById('edesc').value='';
+  toast(`Added ${fmt(exp.amount,2)} · ${exp.category}`,'ok');
+  renderExpenses();renderDonut();renderInsights();renderScore();renderYearStrip();
+}
+
+function delExp(i) { cur().expenses.splice(i,1); save(); renderExpenses();renderDonut();renderInsights();renderScore(); }
+function confirmWarn() { document.getElementById('warn-modal').style.display='none'; if(pending){doAddExp(pending);pending=null;} }
+function cancelWarn() { document.getElementById('warn-modal').style.display='none'; pending=null; }
+
+function openGoalModal() { document.getElementById('goal-modal').style.display='block'; }
+function closeGoalModal() { document.getElementById('goal-modal').style.display='none'; }
+function saveGoal() {
+  const name=document.getElementById('g-name').value.trim();
+  const target=parseFloat(document.getElementById('g-target').value);
+  const pct=parseInt(document.getElementById('g-pct').value);
+  if(!name){toast('Enter a name','warn');return;}
+  if(!target||target<=0){toast('Enter a target amount','warn');return;}
+  S.goals.push({id:Date.now(),name,target,pct});save();closeGoalModal();
+  toast(`Goal "${name}" created`,'ok');renderGoals();
+  document.getElementById('g-name').value='';document.getElementById('g-target').value='';
+}
+function delGoal(i){if(!confirm(`Delete "${S.goals[i].name}"?`))return;S.goals.splice(i,1);save();renderGoals();}
+function saveDefaults() { save(); toast('Defaults saved'); }
+function exportData() {
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='aurelia-finance.json';a.click();toast('Exported');
+}
+function resetData() { localStorage.removeItem('aurelia3'); location.reload(); }
+
+// ── NAVIGATION ──
+function gotoView(v, el) {
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  el.classList.add('active');
+  if(v==='trends') renderTrends();
+  if(v==='goals') renderGoals();
+  if(v==='expenses') renderAllExp();
+  if(v==='settings') renderDefSliders();
+  closeSidebar();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('backdrop').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('open');
+}
+
+// ── TOAST ──
+function toast(msg, type='') {
+  const w=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className='toast'+(type?' '+type:'');
+  const ico={ok:'✓ ',warn:'! ','':''};
+  t.textContent=(ico[type]||'')+msg;
+  w.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity 0.3s';setTimeout(()=>t.remove(),300);},2800);
+}
+
+// ── INIT ──
+load(); render();
+</script>
+</body>
+</html>
